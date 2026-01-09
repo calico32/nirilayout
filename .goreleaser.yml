@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: nirilayout
+
+builds:
+  - env: [CGO_ENABLED=1]
+    goos: [linux]
+    goarch: [amd64]
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags: [-trimpath]
+    ldflags: [-s -w]
+
+archives:
+  - formats: binary
+    name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+
+checksum:
+  name_template: 'checksums.txt'
+
+release:
+  prerelease: auto
+
+changelog:
+  sort: asc
+  use: github
+  format: '{{ .SHA }}: {{ .Message }}{{ if not (eq .AuthorUsername "calico32") }} (@{{ .AuthorUsername }}){{ end }}'
+  filters:
+    exclude:
+      - '^ci:'
+      - '^docs:'
+      - '^refactor:'
+      - '^style:'
+      - '^test:'
+      - '^Merge pull request'
