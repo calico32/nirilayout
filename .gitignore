@@ -1,3 +1,5 @@
 *.prof
 /nirilayout
 /dist
+*.code-workspace
+.vscode
