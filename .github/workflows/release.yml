@@ -15,10 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     container: golang:1.25-trixie
     steps:
-      - run: apt update && apt install -y libgtk-4-dev libgtk4-layer-shell-dev git
+      - run: apt update && apt install -y libgtk-4-dev libgtk4-layer-shell-dev git cosign
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - run: git config --global --add safe.directory $(pwd)
       - uses: goreleaser/goreleaser-action@v6
         with:
           args: release --clean
