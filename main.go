@@ -32,7 +32,7 @@ const version = `nirilayout v0.1.0`
 
 type Layout struct {
 	path      string
-	Name      string    `kdl:"name,strict"`
+	Name      string    `kdl:"name"`
 	Shortcuts []string  `kdl:"shortcut"`
 	Displays  []Display `kdl:"display,multiple"`
 }
@@ -45,7 +45,7 @@ type Display struct {
 	Height int    `kdl:"h"`
 }
 
-func parseLayoutFromConfig(niriConfig []byte) (layout Layout, err error) {
+func parseLayoutFromConfig(filename string, niriConfig []byte) (layout Layout, err error) {
 	var sb strings.Builder
 	for line := range bytes.SplitSeq(niriConfig, []byte("\n")) {
 		if bytes.HasPrefix(line, []byte("//!")) {
@@ -54,7 +54,7 @@ func parseLayoutFromConfig(niriConfig []byte) (layout Layout, err error) {
 		}
 	}
 
-	err = kdl.Decode(strings.NewReader(sb.String()), &layout)
+	err = kdl.DecodeNamed(filename, strings.NewReader(sb.String()), &layout)
 	return
 }
 
@@ -76,9 +76,12 @@ func gatherLayouts(configDir string) ([]Layout, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read %s: %w", file.Name(), err)
 		}
-		layout, err := parseLayoutFromConfig(data)
+		layout, err := parseLayoutFromConfig(file.Name(), data)
 		if err != nil {
 			return nil, err
+		}
+		if layout.Name == "" {
+			layout.Name = strings.TrimSuffix(strings.TrimPrefix(file.Name(), "layout_"), ".kdl")
 		}
 		layout.path = filepath.Join(configDir, file.Name())
 		layouts = append(layouts, layout)
