@@ -11,9 +11,10 @@ frequently.
 
 ### Install nirilayout
 
-Install Go 1.25+ and GTK 4.16+, clone this repo, then run `go install` to
-install nirilayout to $GOBIN. Alternatively, run `make` to build nirilayout in
-the current directory.
+Install Go 1.25+, GTK 4.16+ and [GTK4 Layer
+Shell](https://github.com/wmww/gtk4-layer-shell). Clone this repo, then run `go
+install` to install nirilayout to $GOBIN. Alternatively, run `make` to build
+nirilayout in the current directory.
 
 ### Configure layouts
 
