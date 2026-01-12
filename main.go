@@ -135,19 +135,21 @@ func getNiriConfigDir() (configDir string, err error) {
 
 func main() {
 	flag.Parse()
+
+	var layouts []Layout
+	var current string
+
 	configDir, err := getNiriConfigDir()
-	if err != nil {
-		log.Fatal(err)
+
+	if err == nil {
+		layouts, err = gatherLayouts(configDir)
 	}
 
-	layouts, err := gatherLayouts(configDir)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	current, err := os.Readlink(filepath.Join(configDir, "nirilayout.kdl"))
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Fatal(err)
+	if err == nil {
+		current, err = os.Readlink(filepath.Join(configDir, "nirilayout.kdl"))
+		if errors.Is(err, fs.ErrNotExist) {
+			err = nil
+		}
 	}
 
 	index := slices.IndexFunc(layouts, func(layout Layout) bool {
@@ -159,7 +161,7 @@ func main() {
 
 	app := gtk.NewApplication("co.calebc.nirilayout", gio.ApplicationDefaultFlags)
 	app.ConnectActivate(func() {
-		activate(app, layouts, index)
+		activate(app, layouts, index, err)
 	})
 
 	if code := app.Run(nil); code > 0 {
@@ -170,7 +172,7 @@ func main() {
 //go:embed style.css
 var stylesheet string
 
-func activate(app *gtk.Application, layouts []Layout, startIndex int) {
+func activate(app *gtk.Application, layouts []Layout, startIndex int, err error) {
 	gtk.StyleContextAddProviderForDisplay(
 		gdk.DisplayGetDefault(), loadStylesheet(stylesheet),
 		gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
@@ -189,7 +191,11 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int) {
 
 	var selector *gtk.Box
 
-	if len(layouts) == 0 {
+	if err != nil {
+		label := gtk.NewLabel(fmt.Sprintf("Error loading layouts: %v", err))
+		label.SetHAlign(gtk.AlignCenter)
+		root.Append(label)
+	} else if len(layouts) == 0 {
 		label := gtk.NewLabel("No layouts found. Please create layout_<name>.kdl files ~/.config/niri to use nirilayout.")
 		label.SetHAlign(gtk.AlignCenter)
 		root.Append(label)
@@ -253,8 +259,15 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int) {
 	})
 	label := gtk.NewLabel(version)
 	label.SetSensitive(false)
+	label.SetMarginEnd(16)
 	inputBox.SetStartWidget(label)
+	label = gtk.NewLabel("esc to quit")
+	label.SetSensitive(false)
+	label.SetMarginStart(16)
+	inputBox.SetEndWidget(label)
+
 	inputBox.SetCenterWidget(input)
+
 	root.Append(inputBox)
 
 	win.ConnectShow(func() {
