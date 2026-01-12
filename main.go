@@ -343,8 +343,8 @@ func drawLayout(layout Layout) *gtk.DrawingArea {
 	const borderWidth = 2
 
 	da := gtk.NewDrawingArea()
-	layoutWidth := float64(0)
-	layoutHeight := float64(0)
+	layoutWidth := float64(targetSize)
+	layoutHeight := float64(targetSize)
 	for _, layout := range layout.Displays {
 		layoutWidth = max(layoutWidth, float64(layout.X)+float64(layout.Width))
 		layoutHeight = max(layoutHeight, float64(layout.Y)+float64(layout.Height))
@@ -358,6 +358,15 @@ func drawLayout(layout Layout) *gtk.DrawingArea {
 		cr.SelectFontFace("monospace", cairo.FontSlantNormal, cairo.FontWeightNormal)
 		cr.SetFontSize(10)
 		cr.MoveTo(0, 0)
+
+		if len(layout.Displays) == 0 {
+			extents := cr.TextExtents("no preview available")
+			cr.MoveTo(float64(width)/2-extents.Width/2-extents.XBearing, float64(height)/2-extents.Height/2-extents.YBearing)
+			cr.SetSourceRGBA(rgba(gray400))
+			cr.ShowText("no preview available")
+			return
+		}
+
 		for _, layout := range layout.Displays {
 			x, y, w, h := float64(layout.X)*scale, float64(layout.Y)*scale,
 				float64(layout.Width)*scale, float64(layout.Height)*scale
