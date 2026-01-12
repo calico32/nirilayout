@@ -3,7 +3,7 @@ module nirilayout
 go 1.25.5
 
 require (
-	github.com/calico32/kdl-go v0.8.0
+	github.com/calico32/kdl-go v0.10.0
 	golang.org/x/sys v0.40.0
 )
 

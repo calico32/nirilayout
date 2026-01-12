@@ -17,27 +17,34 @@ the current directory.
 
 ### Configure layouts
 
-_(I'll assume you're using the default config directory `~/.config/niri`. If your
-configuration is elsewhere, pass the `-c` flag to nirilayout each time you run
-it.)_
+_(This assumes you're using the default config directory `~/.config/niri`. If
+your configuration is elsewhere, pass the `-c` flag to nirilayout each time you
+run it.)_
 
-In your `~/.config/niri`, create layouts for your different setups in files
-named `layout_<name>.kdl`. This file contains your niri configuration as usual
-but with some special nirilayout-specific comments at the top, beginning with
-`//!`. (These comments are just KDL v2, by the way).
+In `~/.config/niri`, create layouts for your different setups in files
+named `layout_<name>.kdl`.
 
-- `name`: The name of the layout. Wrap in quotes if it contains spaces.
-- `shortcut`: The shortcut(s) to use for this layout. You can specify multiple
+Each layout file should contain the `output` blocks that niri normally uses (see
+[niri's docs](https://yalter.github.io/niri/Configuration%3A-Outputs.html)).
+Then, add special nirilayout-specific comments throughout the file to configure
+the nirilayout switcher. nirilayout will uncomment any line that starts with
+`//!` and parse them as KDL alongside the regular niri configuration.
+
+Global configuration, outside of any `output` block:
+
+- `//! name`: The name of the layout. Wrap in quotes if it contains spaces.
+- `//! shortcut`: The shortcut(s) to use for this layout. You can specify multiple
   shortcuts by separating them with spaces.
-- `display <name>[:color] x=<x> y=<y> w=<w> h=<h>`: Specifies a display in this
-  layout. width and height are in logical pixels, not physical pixels. If your
-  monitor is scaled, divide the physical size by the scale factor to get the
-  logical size. Repeat this for each display.
 
-  nirilayout will pick a color for each display based on its name. If you want
-  to specify a color yourself, append `:N` to the name, where `N` is a number
-  between 0 and 17. 0 is gray and 1-17 are the first 17 colors of the [Tailwind CSS
-  color palette](https://tailwindcss.com/docs/colors).
+Per-output configuration:
+
+- `//! name`: Specifies a custom name for this output. If not specified, the
+  name at the top (`output "..."`) will be used.
+- `//! color`: Specifies a custom color for this output. nirilayout will pick a
+  color for each display based on its name, but you can pick a custom color
+  yourself by setting this option to a number between 0 and 17. 0 is gray and
+  1-17 are the first 17 colors of the [Tailwind CSS color
+  palette](https://tailwindcss.com/docs/colors).
 
   | Index | Color  |     | Index | Color   |     | Index | Color   |
   | ----- | ------ | --- | ----- | ------- | --- | ----- | ------- |
@@ -48,22 +55,28 @@ but with some special nirilayout-specific comments at the top, beginning with
   | 4     | yellow |     | 10    | sky     |     | 16    | pink    |
   | 5     | lime   |     | 11    | blue    |     | 17    | rose    |
 
+- `//! mode`: If you don't want to specify a mode to niri, you'll need to
+  explicitly set a nirilayout-only size so that the switcher can draw a preview.
+  Do this by using a `//! mode` comment with the desired mode in `"WWWxHHH"`
+  format.
+
 For example, `layout_vertical.kdl` might look like this:
 
 ```kdl
 //! name Vertical
 //! shortcut v
-//! display external x=0 y=0 w=2560 h=1440
-//! display laptop:9 x=427 y=1440 w=1706 h=1066
 
 output "Lenovo Group Limited E27q-20 V5HDD696" {
+    //! name "external"
     mode "2560x1440@74.780"
     scale 1
     position x=0 y=0
 }
 
 output "BOE 0x0AC1 Unknown" {
-    mode "2560x1600@120.001" // logical size: 1706x1066
+    //! name "laptop"
+    //! color 9
+    mode "2560x1600@120.001"
     scale 1.5
     position x=427 y=1440
 }
@@ -74,8 +87,8 @@ output "BOE 0x0AC1 Unknown" {
 Now, run `nirilayout` once to select an initial layout. This creates
 `~/.config/niri/nirilayout.kdl`, a symlink to the layout you selected.
 
-Finally, remove any ouput configuration in `~/.config/niri/config.kdl` and add
-an include to load `nirilayout.kdl`.
+Finally, remove any `output` blocks in `~/.config/niri/config.kdl` and add an
+include to load `nirilayout.kdl`.
 
 ```kdl
 // config.kdl

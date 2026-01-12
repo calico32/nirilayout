@@ -1,7 +1,7 @@
 github.com/KarpelesLab/weak v0.1.1 h1:fNnlPo3aypS9tBzoEQluY13XyUfd/eWaSE/vMvo9s4g=
 github.com/KarpelesLab/weak v0.1.1/go.mod h1:pzXsWs5f2bf+fpgHayTlBE1qJpO3MpJKo5sRaLu1XNw=
-github.com/calico32/kdl-go v0.8.0 h1:OHfHdQd/Grv3wWNGLp6fVL12GsQXe3LnlyS3Oce05Sc=
-github.com/calico32/kdl-go v0.8.0/go.mod h1:XIyo6WwHsxHemcpJt9GytSNDlcvR3Vf7y67ZqmoiFQo=
+github.com/calico32/kdl-go v0.10.0 h1:llzRiYMf6sFDDPWFnJED4H1PyztPRT87SW8LH6/vTbg=
+github.com/calico32/kdl-go v0.10.0/go.mod h1:XIyo6WwHsxHemcpJt9GytSNDlcvR3Vf7y67ZqmoiFQo=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/diamondburned/gotk4-layer-shell/pkg v0.0.0-20240109211357-6efa9f6dc438 h1:Ymnl4B+Fn4srLxXbRV2RY1iHT2SH3oAkOfxeEeMI3Fg=

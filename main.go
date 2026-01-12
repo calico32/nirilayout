@@ -32,26 +32,79 @@ const version = `nirilayout v0.1.0`
 
 type Layout struct {
 	path      string
-	Name      string    `kdl:"name"`
-	Shortcuts []string  `kdl:"shortcut"`
-	Displays  []Display `kdl:"display,multiple"`
+	Name      string   `kdl:"name"`
+	Shortcuts []string `kdl:"shortcut"`
+	Outputs   []Output `kdl:"output,multiple"`
 }
 
-type Display struct {
-	Name   string `kdl:",arg"`
-	X      int    `kdl:"x"`
-	Y      int    `kdl:"y"`
-	Width  int    `kdl:"w"`
-	Height int    `kdl:"h"`
+type Output struct {
+	Name         string    `kdl:",arg"`
+	NameOverride string    `kdl:"name"`
+	Color        *int      `kdl:"color"`
+	Scale        float64   `kdl:"scale"`
+	Transform    string    `kdl:"transform"`
+	Position     *Position `kdl:"position"`
+	Mode         string    `kdl:"mode"` // WWWWxHHHH[@RR.RRR]
+	Modeline     Modeline  `kdl:"modeline"`
+	Off          bool      `kdl:"off,presence"`
+}
+
+// A Modeline is a VESA CVT mode, in Xorg format.
+type Modeline struct {
+	DotClock   float64  `kdl:",arg"`
+	HDisplay   int      `kdl:",arg"`
+	HSyncStart int      `kdl:",arg"`
+	HSyncEnd   int      `kdl:",arg"`
+	HTotal     int      `kdl:",arg"`
+	VDisplay   int      `kdl:",arg"`
+	VSyncStart int      `kdl:",arg"`
+	VSyncEnd   int      `kdl:",arg"`
+	VTotal     int      `kdl:",arg"`
+	Flags      []string `kdl:",args"`
+}
+
+type Position struct {
+	X int `kdl:"x"`
+	Y int `kdl:"y"`
+}
+
+func (o Output) Rect() (x, y, w, h int) {
+	if o.Position != nil {
+		x = o.Position.X
+		y = o.Position.Y
+	} else {
+		x = -1
+		y = -1
+	}
+	if o.Modeline.DotClock != 0 {
+		w = o.Modeline.HDisplay
+		h = o.Modeline.VDisplay
+	} else if o.Mode != "" {
+		parts := strings.Split(strings.Split(o.Mode, "@")[0], "x")
+		w, _ = strconv.Atoi(parts[0])
+		h, _ = strconv.Atoi(parts[1])
+	}
+	if o.Scale != 0 {
+		w = int(float64(w) / o.Scale)
+		h = int(float64(h) / o.Scale)
+	}
+	switch o.Transform {
+	case "90", "flipped-90", "270", "flipped-270":
+		w, h = h, w
+	}
+	return
 }
 
 func parseLayoutFromConfig(filename string, niriConfig []byte) (layout Layout, err error) {
 	var sb strings.Builder
 	for line := range bytes.SplitSeq(niriConfig, []byte("\n")) {
-		if bytes.HasPrefix(line, []byte("//!")) {
-			sb.Write(line[3:])
-			sb.WriteByte('\n')
+		l := bytes.TrimLeft(line, " \t")
+		if bytes.HasPrefix(l, []byte("//!")) {
+			sb.Write(l[3:])
+		} else {
+			sb.Write(line)
 		}
+		sb.WriteByte('\n')
 	}
 
 	err = kdl.DecodeNamed(filename, strings.NewReader(sb.String()), &layout)
@@ -83,6 +136,27 @@ func gatherLayouts(configDir string) ([]Layout, error) {
 		if layout.Name == "" {
 			layout.Name = strings.TrimSuffix(strings.TrimPrefix(file.Name(), "layout_"), ".kdl")
 		}
+
+		outputs := make([]Output, 0, len(layout.Outputs))
+		for _, output := range layout.Outputs {
+			if output.Off {
+				continue
+			}
+			if output.Modeline.DotClock == 0 && output.Mode == "" {
+				return nil, fmt.Errorf("%s: output %s: no mode or modeline defined, can't determine size (use //! mode to set a mode for this output)", file.Name(), output.Name)
+			}
+			if output.Mode != "" {
+				if !strings.Contains(output.Mode, "x") {
+					return nil, fmt.Errorf("%s: output %s: mode %q is not in the format WWWxHHH[@RR.RRR]", file.Name(), output.Name, output.Mode)
+				}
+			}
+			outputs = append(outputs, output)
+		}
+		slices.SortFunc(outputs, func(a, b Output) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		layout.Outputs = outputs
+
 		layout.path = filepath.Join(configDir, file.Name())
 		layouts = append(layouts, layout)
 	}
@@ -357,16 +431,108 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 	win.SetVisible(true)
 }
 
+type placedOutput struct {
+	name           string
+	color          *int
+	xp, yp, wp, hp int
+}
+
+// Niri repositions outputs from scratch every time the output configuration
+// changes (which includes monitors disconnecting and connecting). The following
+// algorithm is used for positioning outputs.
+//   - Collect all connected monitors and their logical sizes.
+//   - Sort them by their name. This makes it so the automatic positioning does
+//     not depend on the order the monitors are connected. This is important
+//     because the connection order is non-deterministic at compositor startup.
+//   - Try to place every output with explicitly configured position, in order.
+//     If the output overlaps previously placed outputs, place it to the right
+//     of all previously placed outputs. In this case, niri will also print a
+//     warning.
+//   - Place every output without explicitly configured position by putting it
+//     to the right of all previously placed outputs.
+func placeOutputs(outputs []Output) []placedOutput {
+	slices.SortFunc(outputs, func(a, b Output) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	var placed []placedOutput
+
+	autoX := 0
+
+	// place outputs with explicitly configured position
+	for _, output := range outputs {
+		if output.Position == nil {
+			continue
+		}
+
+		x, y, w, h := output.Rect()
+
+		overlap := false
+		for _, placedOutput := range placed {
+			xp, yp, wp, hp := placedOutput.xp, placedOutput.yp, placedOutput.wp, placedOutput.hp
+			if x+w > xp && x < xp+wp && y+h > yp && y < yp+hp {
+				overlap = true
+				break
+			}
+		}
+		if overlap {
+			x = autoX
+			y = 0
+		}
+		name := output.Name
+		if output.NameOverride != "" {
+			name = output.NameOverride
+		}
+		placed = append(placed, placedOutput{
+			name:  name,
+			color: output.Color,
+			xp:    x,
+			yp:    y,
+			wp:    w,
+			hp:    h,
+		})
+		autoX = max(autoX, x+w)
+	}
+
+	// place outputs without explicitly configured position
+	for _, output := range outputs {
+		if output.Position != nil {
+			continue
+		}
+
+		_, _, w, h := output.Rect()
+		x := autoX
+		y := 0
+		name := output.Name
+		if output.NameOverride != "" {
+			name = output.NameOverride
+		}
+		placed = append(placed, placedOutput{
+			name:  name,
+			color: output.Color,
+			xp:    x,
+			yp:    y,
+			wp:    w,
+			hp:    h,
+		})
+		autoX = x + w
+	}
+
+	return placed
+}
+
 func drawLayout(layout Layout) *gtk.DrawingArea {
 	const targetSize = 200
 	const borderWidth = 2
 
+	outputs := placeOutputs(layout.Outputs)
+
 	da := gtk.NewDrawingArea()
 	layoutWidth := float64(targetSize)
 	layoutHeight := float64(targetSize)
-	for _, layout := range layout.Displays {
-		layoutWidth = max(layoutWidth, float64(layout.X)+float64(layout.Width))
-		layoutHeight = max(layoutHeight, float64(layout.Y)+float64(layout.Height))
+	for _, o := range outputs {
+		layoutWidth = max(layoutWidth, float64(o.xp)+float64(o.wp))
+		layoutHeight = max(layoutHeight, float64(o.yp)+float64(o.hp))
 	}
 	scale := min(targetSize/layoutWidth, targetSize/layoutHeight)
 	da.SetSizeRequest(int(layoutWidth*scale)+borderWidth, int(layoutHeight*scale)+borderWidth)
@@ -378,7 +544,7 @@ func drawLayout(layout Layout) *gtk.DrawingArea {
 		cr.SetFontSize(10)
 		cr.MoveTo(0, 0)
 
-		if len(layout.Displays) == 0 {
+		if len(outputs) == 0 {
 			extents := cr.TextExtents("no preview available")
 			cr.MoveTo(float64(width)/2-extents.Width/2-extents.XBearing, float64(height)/2-extents.Height/2-extents.YBearing)
 			cr.SetSourceRGBA(rgba(gray400))
@@ -386,21 +552,11 @@ func drawLayout(layout Layout) *gtk.DrawingArea {
 			return
 		}
 
-		for _, layout := range layout.Displays {
-			x, y, w, h := float64(layout.X)*scale, float64(layout.Y)*scale,
-				float64(layout.Width)*scale, float64(layout.Height)*scale
+		for _, o := range outputs {
+			x, y, w, h := float64(o.xp)*scale, float64(o.yp)*scale,
+				float64(o.wp)*scale, float64(o.hp)*scale
 
-			name := layout.Name
-			i := -1
-			if index := strings.IndexByte(layout.Name, ':'); index != -1 {
-				name = layout.Name[:index]
-				c, err := strconv.Atoi(layout.Name[index+1:])
-				if err != nil {
-					log.Fatal(err)
-				}
-				i = c
-			}
-			windowColor, borderColor := pickWindowColors(name, i)
+			windowColor, borderColor := pickWindowColors(o.name, o.color)
 
 			cr.Rectangle(x, y, w, h)
 			cr.SetSourceRGBA(rgba(windowColor))
@@ -411,10 +567,10 @@ func drawLayout(layout Layout) *gtk.DrawingArea {
 			cr.SetSourceRGBA(rgba(borderColor))
 			cr.Stroke()
 
-			extents := cr.TextExtents(name)
+			extents := cr.TextExtents(o.name)
 			cr.MoveTo(x+w/2-extents.Width/2-extents.XBearing, y+h/2-extents.Height/2-extents.YBearing)
 			cr.SetSourceRGBA(rgba(gray100))
-			cr.ShowText(name)
+			cr.ShowText(o.name)
 		}
 	})
 
@@ -439,14 +595,14 @@ var borderColors = []color.Color{
 	rose500,
 }
 
-func pickWindowColors(name string, i int) (fill, border color.Color) {
-	if i >= 0 {
-		return fillColors[i%len(fillColors)], borderColors[i%len(borderColors)]
+func pickWindowColors(name string, i *int) (fill, border color.Color) {
+	if i != nil {
+		return fillColors[*i%len(fillColors)], borderColors[*i%len(borderColors)]
 	}
 	h := fnv.New32a()
 	h.Write([]byte(name))
-	i = int(h.Sum32()) % len(fillColors)
-	return fillColors[i], borderColors[i]
+	index := int(h.Sum32()) % len(fillColors)
+	return fillColors[index], borderColors[index]
 }
 
 func rgba(color color.Color) (r, g, b, a float64) {
