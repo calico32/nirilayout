@@ -189,7 +189,15 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 	root := gtk.NewBox(gtk.OrientationVertical, 16)
 	win.SetChild(root)
 
-	var selector *gtk.Box
+	quit := func() {
+		win.RemoveCSSClass("visible")
+		glib.TimeoutAdd(75, func() bool {
+			app.Quit()
+			return false
+		})
+	}
+
+	var selector *gtk.FlowBox
 
 	if err != nil {
 		label := gtk.NewLabel(fmt.Sprintf("Error loading layouts: %v", err))
@@ -200,7 +208,13 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 		label.SetHAlign(gtk.AlignCenter)
 		root.Append(label)
 	} else {
-		selector = gtk.NewBox(gtk.OrientationHorizontal, 16)
+		selector = gtk.NewFlowBox()
+		selector.SetColumnSpacing(8)
+		selector.SetRowSpacing(8)
+		selector.SetMaxChildrenPerLine(5)
+		selector.SetOrientation(gtk.OrientationHorizontal)
+		selector.SetSelectionMode(gtk.SelectionNone)
+		selector.SetActivateOnSingleClick(true)
 		root.Append(selector)
 	}
 
@@ -226,14 +240,14 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 			setCurrentLayout(layout)
 			app.Quit()
 		})
+
+		button.SetCursorFromName("pointer")
+
+		selector.Insert(button, -1)
 		if i == startIndex {
 			button.AddCSSClass("selected")
 			button.AddCSSClass("current")
 		}
-
-		button.SetCursorFromName("pointer")
-
-		selector.Append(button)
 	}
 
 	inputBox := gtk.NewCenterBox()
@@ -253,7 +267,7 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 			}
 			if text == layout.Name {
 				setCurrentLayout(layout)
-				app.Quit()
+				quit()
 			}
 		}
 	})
@@ -281,26 +295,17 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 		if len(layouts) == 0 {
 			return
 		}
-		j := 0
-		child := selector.FirstChild()
-		for child != nil {
-			button := child.(*gtk.Button)
+		for j := 0; selector.ChildAtIndex(j) != nil; j++ {
+			button := selector.ChildAtIndex(j).Child().(*gtk.Button)
 			if j == i {
 				button.AddCSSClass("selected")
 			} else {
 				button.RemoveCSSClass("selected")
 			}
-			child = button.NextSibling()
-			j++
 		}
-	}
-
-	quit := func() {
-		win.RemoveCSSClass("visible")
-		glib.TimeoutAdd(75, func() bool {
-			app.Quit()
-			return false
-		})
+		if len(layouts) == 0 {
+			return
+		}
 	}
 
 	k := gtk.NewEventControllerKey()
@@ -321,6 +326,20 @@ func activate(app *gtk.Application, layouts []Layout, startIndex int, err error)
 			index--
 			if index < 0 {
 				index = len(layouts) - 1
+			}
+			setActiveLayout(index)
+			return true
+		case gdk.KEY_Up:
+			skip := int(selector.MaxChildrenPerLine())
+			if index-skip >= 0 {
+				index -= skip
+			}
+			setActiveLayout(index)
+			return true
+		case gdk.KEY_Down:
+			skip := int(selector.MaxChildrenPerLine())
+			if index+skip < len(layouts) {
+				index += skip
 			}
 			setActiveLayout(index)
 			return true
