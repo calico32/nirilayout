@@ -90,22 +90,26 @@ func gatherLayouts(configDir string) ([]Layout, error) {
 	return layouts, nil
 }
 
-func setCurrentLayout(layout Layout) error {
+func setCurrentLayout(layout Layout) {
 	configDir, err := getNiriConfigDir()
 	if err != nil {
-		return err
+		log.Fatal(err)
+		return
 	}
 
 	temp := filepath.Join(configDir, fmt.Sprintf("nirilayout-%d.kdl", unix.Getpid()))
 
 	err = os.Symlink(layout.path, temp)
 	if err != nil {
-		return err
+		log.Fatal(err)
+		return
 	}
 
 	err = os.Rename(temp, filepath.Join(configDir, "nirilayout.kdl"))
-
-	return err
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }
 
 var niriConfigDir = flag.String("c", "~/.config/niri", "niri config directory")
