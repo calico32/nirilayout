@@ -14,7 +14,7 @@ import (
 	"github.com/diamondburned/gotk4/pkg/gtk/v4"
 )
 
-const version = `nirilayout v0.3.0`
+const version = `nirilayout v0.4.0`
 
 //go:embed style.css
 var appStylesheet string
@@ -77,11 +77,11 @@ func Run(app *gtk.Application, layouts []Layout, startIndex int, err error) {
 	var selector *gtk.FlowBox
 
 	if err != nil {
-		label := gtk.NewLabel(fmt.Sprintf("Error loading layouts: %v", err))
+		label := gtk.NewLabel(Tf("Error loading layouts: %v", err))
 		label.SetHAlign(gtk.AlignCenter)
 		root.Append(label)
 	} else if len(layouts) == 0 {
-		label := gtk.NewLabel("No layouts found. Please create layout_<name>.kdl files ~/.config/niri to use nirilayout.")
+		label := gtk.NewLabel(T("No layouts found. Please create layout_<name>.kdl files in ~/.config/niri to use nirilayout."))
 		label.SetHAlign(gtk.AlignCenter)
 		root.Append(label)
 	} else {
@@ -131,8 +131,12 @@ func Run(app *gtk.Application, layouts []Layout, startIndex int, err error) {
 
 	input := gtk.NewEntry()
 	input.SetSizeRequest(400, 0)
-	input.SetAlignment(0.5)
-	input.SetPlaceholderText("name or shortcut...")
+	if *leftAlignFlag {
+		input.SetAlignment(0)
+	} else {
+		input.SetAlignment(0.5)
+	}
+	input.SetPlaceholderText(T("Name or shortcut…"))
 	input.ConnectChanged(func() {
 		text := input.Text()
 		for _, layout := range layouts {
@@ -152,7 +156,7 @@ func Run(app *gtk.Application, layouts []Layout, startIndex int, err error) {
 	label.SetSensitive(false)
 	label.SetMarginEnd(16)
 	inputBox.SetStartWidget(label)
-	label = gtk.NewLabel("esc to quit")
+	label = gtk.NewLabel(T("Esc to quit"))
 	label.SetSensitive(false)
 	label.SetMarginStart(16)
 	inputBox.SetEndWidget(label)

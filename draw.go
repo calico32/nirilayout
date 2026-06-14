@@ -123,10 +123,11 @@ func drawLayout(layout Layout) *gtk.DrawingArea {
 		cr.MoveTo(0, 0)
 
 		if len(outputs) == 0 {
-			extents := cr.TextExtents("no preview available")
+			msg := T("No preview available")
+			extents := cr.TextExtents(msg)
 			cr.MoveTo(float64(width)/2-extents.Width/2-extents.XBearing, float64(height)/2-extents.Height/2-extents.YBearing)
 			cr.SetSourceRGBA(rgba(gray400))
-			cr.ShowText("no preview available")
+			cr.ShowText(msg)
 			return
 		}
 

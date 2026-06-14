@@ -188,10 +188,99 @@ prefixes of each other.
 Layouts are presented in lexicographical order by name. If you want to change
 the order, you can rename the files in the config directory.
 
+## Command-line options
+
+| Option        | Description                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `-c <dir>`    | niri config directory (default `~/.config/niri`).                                            |
+| `-lang <code>`| Interface language code, e.g. `it`. Overrides the system locale. See [Localization](#localization). |
+| `-lowercase`  | Render all of nirilayout's own interface text in lowercase. See [Casing](#casing).           |
+| `-leftalign`  | Left-align the text in the search box. See [Search box alignment](#search-box-alignment).    |
+
+Run `nirilayout -h` for the full list.
+
+## Appearance
+
+### Casing
+
+By default nirilayout uses standard sentence casing for its own interface text
+(for example `Esc to quit`). If you prefer everything in lowercase, pass the
+`-lowercase` flag:
+
+```sh
+nirilayout -lowercase
+```
+
+This only affects nirilayout's own interface strings — the names of your layouts
+and outputs are always shown exactly as you wrote them.
+
+### Search box alignment
+
+The text you type into the search box is centered by default. Pass the
+`-leftalign` flag to left-align it instead:
+
+```sh
+nirilayout -leftalign
+```
+
+## Localization
+
+nirilayout's interface can be translated. The language is chosen automatically,
+with the following precedence:
+
+1. The `-lang` flag, when set, wins over everything (e.g. `nirilayout -lang it`).
+2. Otherwise the operating system locale is used, read from the `LC_ALL`,
+   `LC_MESSAGES`, and `LANG` environment variables (in that order). A locale
+   like `it_IT.UTF-8` is matched to its base language `it`.
+3. Otherwise English is used.
+
+If the selected language has no translation, nirilayout falls back to English.
+
+Currently available languages:
+
+- English (`en`, source language)
+- Italian (`it`)
+
+### Adding a translation
+
+Translations use [gettext](https://www.gnu.org/software/gettext/). The compiled
+`.mo` catalogs are committed to the repository and embedded into the binary, so
+**building or running nirilayout never requires any gettext tooling**. You only
+need the gettext tools (`xgettext`, `msgmerge`, `msgfmt`) to *edit* translations.
+
+To add a new language (using French, `fr`, as an example):
+
+1. Refresh the message template and existing translations from the source:
+
+   ```sh
+   make update-po
+   ```
+
+2. Create the catalog directory and initialize the `.po` file from the template:
+
+   ```sh
+   mkdir -p locales/fr/LC_MESSAGES
+   msginit -i locales/nirilayout.pot -o locales/fr/LC_MESSAGES/nirilayout.po -l fr
+   ```
+
+3. Translate the `msgstr` entries in `locales/fr/LC_MESSAGES/nirilayout.po`.
+
+4. Compile the catalogs (this produces the committed `.mo` files):
+
+   ```sh
+   make i18n
+   ```
+
+5. Add the new language to the list above and open a pull request.
+
+To update an existing translation, edit its `.po` file, run `make i18n`, and
+commit both the `.po` and the regenerated `.mo`.
+
 # Contributing
 
 Contributions are welcome! If you find a bug or have a feature request, please
-open an issue or a pull request.
+open an issue or a pull request. Translations are especially welcome — see
+[Adding a translation](#adding-a-translation).
 
 # License
 

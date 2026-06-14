@@ -26,7 +26,13 @@ const (
 	defaultLineSpacing = 4
 )
 
-var niriConfigDir = flag.String("c", "~/.config/niri", "niri config directory")
+var niriConfigDir = flag.String("c", "~/.config/niri", N("niri config directory"))
+
+var (
+	langFlag      = flag.String("lang", "", N("interface language code (e.g. \"it\"); overrides the system locale"))
+	lowercaseFlag = flag.Bool("lowercase", false, N("render all interface text in lowercase"))
+	leftAlignFlag = flag.Bool("leftalign", false, N("left-align the text in the search box (default is centered)"))
+)
 
 func GetNiriConfigDir() (configDir string, err error) {
 	if strings.HasPrefix(*niriConfigDir, "~") {

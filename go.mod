@@ -17,4 +17,5 @@ require (
 	github.com/diamondburned/gotk4-layer-shell/pkg v0.0.0-20240109211357-6efa9f6dc438
 	github.com/diamondburned/gotk4/pkg v0.3.1
 	github.com/google/go-cmp v0.7.0
+	github.com/leonelquinteros/gotext v1.7.2
 )

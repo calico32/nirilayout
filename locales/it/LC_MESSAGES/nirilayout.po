@@ -1,0 +1,82 @@
+# Italian translation for nirilayout.
+# Copyright (C) 2026 nirilayout contributors
+# This file is distributed under the same license as the nirilayout package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nirilayout\n"
+"Report-Msgid-Bugs-To: https://github.com/calico32/nirilayout/issues\n"
+"POT-Creation-Date: 2026-06-14 07:36+0200\n"
+"PO-Revision-Date: 2026-06-13 21:00+0200\n"
+"Last-Translator: nirilayout contributors\n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: config.go:29
+msgid "niri config directory"
+msgstr "directory di configurazione di niri"
+
+#: config.go:32
+msgid "interface language code (e.g. \"it\"); overrides the system locale"
+msgstr ""
+"codice lingua dell'interfaccia (es. \"it\"); ha la precedenza sul locale di "
+"sistema"
+
+#: config.go:33
+msgid "render all interface text in lowercase"
+msgstr "mostra tutto il testo dell'interfaccia in minuscolo"
+
+#: config.go:34
+msgid "left-align the text in the search box (default is centered)"
+msgstr ""
+"allinea a sinistra il testo nella casella di ricerca (predefinito: centrato)"
+
+#: draw.go:126
+msgid "No preview available"
+msgstr "Nessuna anteprima disponibile"
+
+#: i18n_test.go:34 i18n_test.go:67 nirilayout.go:159
+msgid "Esc to quit"
+msgstr "Esc per uscire"
+
+#: i18n_test.go:37 i18n_test.go:50 nirilayout.go:80
+msgid "Error loading layouts: %v"
+msgstr "Errore nel caricamento dei layout: %v"
+
+#: i18n_test.go:47 nirilayout.go:139
+msgid "Name or shortcut…"
+msgstr "Nome o scorciatoia…"
+
+#: nirilayout.go:84
+msgid ""
+"No layouts found. Please create layout_<name>.kdl files in ~/.config/niri to "
+"use nirilayout."
+msgstr ""
+"Nessun layout trovato. Crea dei file layout_<name>.kdl in ~/.config/niri per "
+"usare nirilayout."
+
+#: cmd/nirilayout/main.go:24
+msgid ""
+"nirilayout is a layout switcher for niri.\n"
+"\n"
+"Command-line options:\n"
+msgstr ""
+"nirilayout è un selettore di layout per niri.\n"
+"\n"
+"Opzioni da riga di comando:\n"
+
+#: cmd/nirilayout/main.go:31
+msgid ""
+"\n"
+"To use nirilayout, create layouts in files called ~/.config/niri/"
+"layout_<name>.kdl and run nirilayout.\n"
+"See the README for more details:\n"
+msgstr ""
+"\n"
+"Per usare nirilayout, crea dei layout in file chiamati ~/.config/niri/"
+"layout_<name>.kdl ed esegui nirilayout.\n"
+"Consulta il README per maggiori dettagli:\n"

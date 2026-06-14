@@ -1,0 +1,71 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR nirilayout contributors
+# This file is distributed under the same license as the nirilayout package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: nirilayout\n"
+"Report-Msgid-Bugs-To: https://github.com/calico32/nirilayout/issues\n"
+"POT-Creation-Date: 2026-06-14 07:39+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: config.go:29
+msgid "niri config directory"
+msgstr ""
+
+#: config.go:32
+msgid "interface language code (e.g. \"it\"); overrides the system locale"
+msgstr ""
+
+#: config.go:33
+msgid "render all interface text in lowercase"
+msgstr ""
+
+#: config.go:34
+msgid "left-align the text in the search box (default is centered)"
+msgstr ""
+
+#: draw.go:126
+msgid "No preview available"
+msgstr ""
+
+#: i18n_test.go:34 i18n_test.go:67 nirilayout.go:159
+msgid "Esc to quit"
+msgstr ""
+
+#: i18n_test.go:37 i18n_test.go:50 nirilayout.go:80
+msgid "Error loading layouts: %v"
+msgstr ""
+
+#: i18n_test.go:47 nirilayout.go:139
+msgid "Name or shortcut…"
+msgstr ""
+
+#: nirilayout.go:84
+msgid ""
+"No layouts found. Please create layout_<name>.kdl files in ~/.config/niri to "
+"use nirilayout."
+msgstr ""
+
+#: cmd/nirilayout/main.go:24
+msgid ""
+"nirilayout is a layout switcher for niri.\n"
+"\n"
+"Command-line options:\n"
+msgstr ""
+
+#: cmd/nirilayout/main.go:31
+msgid ""
+"\n"
+"To use nirilayout, create layouts in files called ~/.config/niri/"
+"layout_<name>.kdl and run nirilayout.\n"
+"See the README for more details:\n"
+msgstr ""

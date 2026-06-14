@@ -15,14 +15,27 @@ import (
 )
 
 func main() {
+	// Initialize i18n from the system locale first so that flag.Usage (which
+	// flag.Parse may invoke on -h or a parse error) is already localized. It
+	// is re-initialized after flag.Parse to honor -lang and -lowercase.
+	nirilayout.InitI18n()
+
 	flag.Usage = func() {
-		fmt.Printf("nirilayout is a layout switcher for niri.\n\nCommand-line options:\n")
+		fmt.Print(nirilayout.T("nirilayout is a layout switcher for niri.\n\nCommand-line options:\n"))
+		// Translate each flag's usage string in place, then let the flag
+		// package handle the formatting (types, defaults, alignment).
+		flag.VisitAll(func(f *flag.Flag) {
+			f.Usage = nirilayout.T(f.Usage)
+		})
 		flag.PrintDefaults()
-		fmt.Printf("\nTo use nirilayout, create layouts in files called ~/.config/niri/layout_<name>.kdl and run nirilayout.\nSee the README for more details:\n")
-		fmt.Printf("  https://github.com/calico32/nirilayout/blob/main/README.md\n")
+		fmt.Print(nirilayout.T("\nTo use nirilayout, create layouts in files called ~/.config/niri/layout_<name>.kdl and run nirilayout.\nSee the README for more details:\n"))
+		fmt.Print("  https://github.com/calico32/nirilayout/blob/main/README.md\n")
 	}
 
 	flag.Parse()
+
+	// Apply -lang and -lowercase now that flags are parsed.
+	nirilayout.InitI18n()
 
 	var layouts []nirilayout.Layout
 	var current string
