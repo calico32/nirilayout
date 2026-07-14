@@ -80,6 +80,42 @@ func GatherLayouts(configDir string) ([]Layout, error) {
 	return layouts, nil
 }
 
+// CurrentLayoutPath returns the Path of the layout currently written to
+// nirilayout.kdl, or "" if it can't be determined.
+//
+// SetCurrentLayout now always writes nirilayout.kdl as a regular file, so the
+// answer normally comes from matching its contents against the known layout
+// files. We still try Readlink first for backward compatibility: older
+// nirilayout versions (and the classic setup) left nirilayout.kdl as a symlink
+// to the active layout, which a successful Readlink resolves directly. Once the
+// user switches layouts under this version, it becomes a regular file.
+func CurrentLayoutPath(configDir string, layouts []Layout) string {
+	path := filepath.Join(configDir, "nirilayout.kdl")
+
+	if target, err := os.Readlink(path); err == nil {
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(configDir, target)
+		}
+		return target
+	}
+
+	// Not a symlink (or an unreadable link): compare file contents instead.
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	for _, layout := range layouts {
+		other, err := os.ReadFile(layout.Path)
+		if err != nil {
+			continue
+		}
+		if bytes.Equal(data, other) {
+			return layout.Path
+		}
+	}
+	return ""
+}
+
 func SetCurrentLayout(layout Layout) {
 	configDir, err := GetNiriConfigDir()
 	if err != nil {
@@ -87,9 +123,21 @@ func SetCurrentLayout(layout Layout) {
 		return
 	}
 
+	// Write the selected layout's contents into nirilayout.kdl as a regular
+	// file, atomically (temp file + rename). This used to create a symlink,
+	// but some setups (e.g. noctalia) manage nirilayout.kdl as a regular file
+	// and never followed a symlink swap, so switching layouts did nothing. A
+	// plain copy works for every setup: niri's `include` reads the contents
+	// either way, and CurrentLayoutPath matches the active layout by contents.
+	data, err := os.ReadFile(layout.Path)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	temp := filepath.Join(configDir, fmt.Sprintf("nirilayout-%d.kdl", unix.Getpid()))
 
-	err = os.Symlink(layout.Path, temp)
+	err = os.WriteFile(temp, data, 0o644)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -97,6 +145,7 @@ func SetCurrentLayout(layout Layout) {
 
 	err = os.Rename(temp, filepath.Join(configDir, "nirilayout.kdl"))
 	if err != nil {
+		os.Remove(temp)
 		log.Fatal(err)
 		return
 	}

@@ -1,13 +1,10 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"io/fs"
 	"nirilayout"
 	"os"
-	"path/filepath"
 	"slices"
 
 	"github.com/diamondburned/gotk4/pkg/gio/v2"
@@ -25,25 +22,23 @@ func main() {
 	flag.Parse()
 
 	var layouts []nirilayout.Layout
-	var current string
 
 	configDir, err := nirilayout.GetNiriConfigDir()
 	if err == nil {
 		layouts, err = nirilayout.GatherLayouts(configDir)
 	}
 
+	// Preselect the active layout. Detection works whether nirilayout.kdl is a
+	// symlink (classic setup) or a regular file (e.g. noctalia 5); if it can't
+	// be determined we just fall back to the first layout, never an error.
+	index := 0
 	if err == nil {
-		current, err = os.Readlink(filepath.Join(configDir, "nirilayout.kdl"))
-		if errors.Is(err, fs.ErrNotExist) {
-			err = nil
+		current := nirilayout.CurrentLayoutPath(configDir, layouts)
+		if i := slices.IndexFunc(layouts, func(l nirilayout.Layout) bool {
+			return l.Path == current
+		}); i != -1 {
+			index = i
 		}
-	}
-
-	index := slices.IndexFunc(layouts, func(l nirilayout.Layout) bool {
-		return l.Path == current
-	})
-	if index == -1 {
-		index = 0
 	}
 
 	app := gtk.NewApplication("co.calebc.nirilayout", gio.ApplicationDefaultFlags)

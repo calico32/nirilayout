@@ -96,6 +96,9 @@ func Run(app *gtk.Application, layouts []Layout, startIndex int, err error) {
 	}
 
 	for i, layout := range layouts {
+		if selector == nil {
+			break
+		}
 		button := gtk.NewButton()
 		b := gtk.NewBox(gtk.OrientationVertical, 8)
 		container := gtk.NewCenterBox()
